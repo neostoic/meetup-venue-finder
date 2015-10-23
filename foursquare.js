@@ -78,9 +78,36 @@ do { phantom.page.sendEvent('mousemove'); } while (page.evaluate(function() {
 console.log('Search finished!');
 page.render(screenshotPath + screenshotNum++ + '.png');
 
+// Click on 'See more results' button to get full list
+while(page.evaluate(function() { 
+        return $(".blueButton").is(":visible");
+      })) {
+  phantom.page.sendEvent('mousemove');
+  
+  // Only click on button if page isn't loading
+  page.evaluate(function() { 
+    if (!$("#loadingResults").is(":visible") && $(".blueButton").is(":visible")) {
+      var ev = document.createEvent('MouseEvents');
+      ev.initEvent('click', true, true);
+      var element = document.querySelector('.blueButton');
+      console.log('clicking on element: ' + element);
+      element.dispatchEvent(ev);
+    }
+  });
+}
+// Make sure that all bars finished loading
+do { phantom.page.sendEvent('mousemove'); } while (page.evaluate(function() { 
+  if (!$("#loadingResults").is(":visible") && !$(".blueButton").is(":visible")) {
+    return false;
+  }
+  return true;
+}));
+page.render(screenshotPath + screenshotNum++ + '.png');
+
 // Get list of bars
 var barList = page.evaluate(function() {
   var venueElements = document.querySelectorAll('.venueName h2 a');
+  console.log('venue list size: ' + venueElements.length);
   var barLinkList = [];
   for (var i = 0; i < venueElements.length; ++i) {
     barLinkList.push(venueElements[i].href);
