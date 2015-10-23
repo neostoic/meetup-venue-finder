@@ -78,55 +78,63 @@ do { phantom.page.sendEvent('mousemove'); } while (page.evaluate(function() {
 console.log('Search finished!');
 page.render(screenshotPath + screenshotNum++ + '.png');
 
-//TODO: Get list of bars
-page.evaluate(function() {
-  // Head to bar page
-  var ev = document.createEvent('MouseEvents');
-  ev.initEvent('click', true, true);
-  var element = document.querySelector('.venueName h2 a');
-  
-  // Remove target=_blank from link
-  element.removeAttribute('target');
-  
-  element.dispatchEvent(ev);
+// Get list of bars
+var barList = page.evaluate(function() {
+  var venueElements = document.querySelectorAll('.venueName h2 a');
+  var barLinkList = [];
+  for (var i = 0; i < venueElements.length; ++i) {
+    barLinkList.push(venueElements[i].href);
+  }
+  return barLinkList;
 });
-do { phantom.page.sendEvent('mousemove'); } while (page.evaluate(function() { 
-  var isVisible = document.getElementById('actionBar');
-  if(isVisible) return false;
-  else return true;
-}));
-console.log('Opened bar page!');
-page.render(screenshotPath + screenshotNum++ + '.png');
 
-// Save bar information
-page.evaluate(function() {
-  var barInformation = {};
-  barInformation.name = document.querySelector('.venueName').innerText;
-  barInformation.address = document.querySelector('.adr').innerText;
-  barInformation.telephone = document.querySelector('.tel').innerText;
-  barInformation.price = document.querySelector('[itemprop=priceRange]').innerText.replace(/\s+/g, '');
-  barInformation.website = document.querySelector('.url').href;
+for (var i = 0; i < barList.length; i++) {
+  getBarInformation(barList[i]);
+}
+
+function getBarInformation(barUrl) {
+  console.log('Getting information for: ' + barUrl + '\n');
+  // Open bar page
+  page.open(barUrl);
+  do { phantom.page.sendEvent('mousemove'); } while (page.loading || page.evaluate(function() { 
+    var isVisible = document.getElementById('actionBar');
+    if(isVisible) return false;
+    else return true;
+  }));
+  console.log('Bar page loaded!');
+  page.render(screenshotPath + screenshotNum++ + '.png');
   
-  // Outdoor seating has no ID's or specific classes
-  var venueSecondaryAttr = document.querySelectorAll('.venueAttr, .secondaryAttr');
-  for (i = 0; i < venueSecondaryAttr.length; ++i) {
-    var attrKey = venueSecondaryAttr[i].firstElementChild.innerText;
-    if(attrKey.match('Outdoor Seating')) {
-      barInformation.outdoorSeating = venueSecondaryAttr[i].lastElementChild.innerText;
+  // Save bar information
+  page.evaluate(function() {
+    var barInformation = {};
+    barInformation.name = document.querySelector('.venueName').innerText;
+    console.log(barInformation.name);
+    barInformation.address = document.querySelector('.adr').innerText;
+    barInformation.telephone = document.querySelector('.tel').innerText;
+    barInformation.price = document.querySelector('[itemprop=priceRange]').innerText.replace(/\s+/g, '');
+    barInformation.website = document.querySelector('.url').href;
+    
+    // Outdoor seating has no ID's or specific classes
+    var venueSecondaryAttr = document.querySelectorAll('.venueAttr, .secondaryAttr');
+    for (i = 0; i < venueSecondaryAttr.length; ++i) {
+      var attrKey = venueSecondaryAttr[i].firstElementChild.innerText;
+      if(attrKey.match('Outdoor Seating')) {
+        barInformation.outdoorSeating = venueSecondaryAttr[i].lastElementChild.innerText;
+      }
     }
-  }
-  
-  // Get list of reviews
-  var reviewsList = document.getElementById('tipsList').children;
-  for (var j = 0; j < reviewsList.length; ++j) {
-    var tipContents = reviewsList[j].lastElementChild.children;
-    barInformation.reviews = [];
-    var barReview = {};
-    barReview.text = tipContents[0].innerText;
-    barReview.date = tipContents[1].children[1].innerText;
-    barInformation.reviews.push(barReview);
-  }
-});
+    
+    // Get list of reviews
+    var reviewsList = document.getElementById('tipsList').children;
+    for (var j = 0; j < reviewsList.length; ++j) {
+      var tipContents = reviewsList[j].lastElementChild.children;
+      barInformation.reviews = [];
+      var barReview = {};
+      barReview.text = tipContents[0].innerText;
+      barReview.date = tipContents[1].children[1].innerText;
+      barInformation.reviews.push(barReview);
+    }
+  });
+}
 
 
 phantom.exit();
