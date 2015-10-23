@@ -84,8 +84,10 @@ page.evaluate(function() {
   var ev = document.createEvent('MouseEvents');
   ev.initEvent('click', true, true);
   var element = document.querySelector('.venueName h2 a');
+  
   // Remove target=_blank from link
   element.removeAttribute('target');
+  
   element.dispatchEvent(ev);
 });
 do { phantom.page.sendEvent('mousemove'); } while (page.evaluate(function() { 
@@ -115,6 +117,15 @@ page.evaluate(function() {
   }
   
   // Get list of reviews
+  var reviewsList = document.getElementById('tipsList').children;
+  for (var j = 0; j < reviewsList.length; ++j) {
+    var tipContents = reviewsList[j].lastElementChild.children;
+    barInformation.reviews = [];
+    var barReview = {};
+    barReview.text = tipContents[0].innerText;
+    barReview.date = tipContents[1].children[1].innerText;
+    barInformation.reviews.push(barReview);
+  }
 });
 
 
