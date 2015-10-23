@@ -124,26 +124,53 @@ for (var i = 0; i < barList.length; i++) {
 var jsonObject = JSON.stringify(barListInformation);
 
 // Convert from JSON to CSV
-var csvObject = ConvertToCSV(jsonObject);
+var csvObject = JSONToCSVConvertor(jsonObject, true);
 
 // Save CSV
 var fs = require('fs');
 fs.write('barOutput/barlist.csv', csvObject, 'w');
 
-function ConvertToCSV(objArray) {
-  var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
-  var str = '';
+function JSONToCSVConvertor(JSONData, showLabel) {
+  //If JSONData is not an object then JSON.parse will parse the JSON string in an Object
+  var arrData = typeof JSONData != 'object' ? JSON.parse(JSONData) : JSONData;
+  
+  var csvResult = '';    
 
-  for (var i = 0; i < array.length; i++) {
-    var line = '';
-    for (var index in array[i]) {
-      if (line !== '') line += ',';
-      line += array[i][index];
-    }
-    str += line + '\r\n';
+  //This condition will generate the Label/Header
+  if (showLabel) {
+      var labelRow = "";
+      
+      //This loop will extract the label from 1st index of on array
+      for (var labelIndex in arrData[0]) {
+          
+          //Now convert each value to string and comma-seprated
+          labelRow += labelIndex + ',';
+      }
+      labelRow = labelRow.slice(0, -1);
+      
+      //append Label row with line break
+      csvResult += labelRow + '\r\n';
+  }
+  
+  //1st loop is to extract each row
+  for (var i = 0; i < arrData.length; i++) {
+      var row = "";
+      
+      //2nd loop will extract each column and convert it in string comma-seprated
+      for (var index in arrData[i]) {
+          row += '"' + arrData[i][index] + '",';
+      }
+      row.slice(0, row.length - 1);
+      
+      //add a line break after each row
+      csvResult += row + '\r\n';
   }
 
-  return str;
+  if (csvResult === '') {        
+      console.log("Invalid data");
+      return;
+  }   
+  return csvResult;
 }
 
 function getBarInformation(barUrl) {
