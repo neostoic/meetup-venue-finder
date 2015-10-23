@@ -3,6 +3,7 @@ var screenshotNum = 1;
 var screenshotPath = 'screenshots/foursquare';
 var userInformation = {};
 var searchForUserInformation = false;
+var Papa = require('./babyparse.js');
 
 page.onConsoleMessage = function(msg) {
   // Don't print Foursquare's developer console warning
@@ -119,60 +120,6 @@ var barListInformation = [];
 for (var i = 0; i < barList.length; i++) {
   barListInformation.push(getBarInformation(barList[i]));
 }
-
-// Convert bars information to JSON
-var jsonObject = JSON.stringify(barListInformation);
-
-// Convert from JSON to CSV
-var csvObject = JSONToCSVConvertor(jsonObject, true);
-
-// Save CSV
-var fs = require('fs');
-fs.write('barOutput/barlist.csv', csvObject, 'w');
-
-function JSONToCSVConvertor(JSONData, showLabel) {
-  //If JSONData is not an object then JSON.parse will parse the JSON string in an Object
-  var arrData = typeof JSONData != 'object' ? JSON.parse(JSONData) : JSONData;
-  
-  var csvResult = '';    
-
-  //This condition will generate the Label/Header
-  if (showLabel) {
-      var labelRow = "";
-      
-      //This loop will extract the label from 1st index of on array
-      for (var labelIndex in arrData[0]) {
-          
-          //Now convert each value to string and comma-seprated
-          labelRow += labelIndex + ',';
-      }
-      labelRow = labelRow.slice(0, -1);
-      
-      //append Label row with line break
-      csvResult += labelRow + '\r\n';
-  }
-  
-  //1st loop is to extract each row
-  for (var i = 0; i < arrData.length; i++) {
-      var row = "";
-      
-      //2nd loop will extract each column and convert it in string comma-seprated
-      for (var index in arrData[i]) {
-          row += '"' + arrData[i][index] + '",';
-      }
-      row.slice(0, row.length - 1);
-      
-      //add a line break after each row
-      csvResult += row + '\r\n';
-  }
-
-  if (csvResult === '') {        
-      console.log("Invalid data");
-      return;
-  }   
-  return csvResult;
-}
-
 function getBarInformation(barUrl) {
   console.log('Getting information for: ' + barUrl + '\n');
   // Open bar page
@@ -205,18 +152,64 @@ function getBarInformation(barUrl) {
     
     // Get list of reviews
     var reviewsList = document.getElementById('tipsList').children;
-    barInformation.reviews = [];
+    barInformation.reviews = {};
     for (var j = 0; j < reviewsList.length; ++j) {
       var tipContents = reviewsList[j].lastElementChild.children;
       var barReview = {};
       barReview.text = tipContents[0].innerText.toString();
       barReview.date = tipContents[1].children[1].innerText.toString();
-      barInformation.reviews.push(barReview);
+      barInformation.reviews['review' + j] = barReview;
     }
     return barInformation;
   });
   return barInformation;
 }
+
+// Convert bars information to JSON
+var jsonObject = JSON.stringify(barListInformation);
+console.log('stringified JSON:\n');
+console.log(jsonObject);
+
+JSON.flatten = function(data) {
+    var result = {};
+    function recurse (cur, prop) {
+        if (Object(cur) !== cur) {
+            result[prop] = cur;
+        } else if (Array.isArray(cur)) {
+             for(var i = 0, l=cur.length; i<l; i++)
+                 recurse(cur[i], prop + "[" + i + "]");
+            if (l === 0)
+                result[prop] = [];
+        } else {
+            var isEmpty = true;
+            for (var p in cur) {
+                isEmpty = false;
+                recurse(cur[p], prop ? prop+"."+p : p);
+            }
+            if (isEmpty && prop)
+                result[prop] = {};
+        }
+    }
+    recurse(data, "");
+    return result;
+};
+var flattenObject = [];
+barListInformation.forEach(function(barInfo) {
+  flattenObject.push(JSON.flatten(barInfo));
+});
+
+// Convert from Object to CSV
+var csvObject = Papa.unparse(flattenObject, {
+	quotes: true
+});
+
+if (csvObject) {
+  console.log('Succesfully exported CSV!');
+}
+
+// Save CSV
+var fs = require('fs');
+fs.write('barOutput/barlist.csv', csvObject, 'w');
 
 
 phantom.exit();
