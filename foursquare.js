@@ -88,8 +88,35 @@ var barList = page.evaluate(function() {
   return barLinkList;
 });
 
+var barListInformation = [];
 for (var i = 0; i < barList.length; i++) {
-  getBarInformation(barList[i]);
+  barListInformation.push(getBarInformation(barList[i]));
+}
+
+// Convert bars information to JSON
+var jsonObject = JSON.stringify(barListInformation);
+
+// Convert from JSON to CSV
+var csvObject = ConvertToCSV(jsonObject);
+
+// Save CSV
+var fs = require('fs');
+fs.write('barOutput/barlist.csv', csvObject, 'w');
+
+function ConvertToCSV(objArray) {
+  var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+  var str = '';
+
+  for (var i = 0; i < array.length; i++) {
+    var line = '';
+    for (var index in array[i]) {
+      if (line !== '') line += ',';
+      line += array[i][index];
+    }
+    str += line + '\r\n';
+  }
+
+  return str;
 }
 
 function getBarInformation(barUrl) {
@@ -105,10 +132,9 @@ function getBarInformation(barUrl) {
   page.render(screenshotPath + screenshotNum++ + '.png');
   
   // Save bar information
-  page.evaluate(function() {
+  var barInformation = page.evaluate(function() {
     var barInformation = {};
     barInformation.name = document.querySelector('.venueName').innerText;
-    console.log(barInformation.name);
     barInformation.address = document.querySelector('.adr').innerText;
     barInformation.telephone = document.querySelector('.tel').innerText;
     barInformation.price = document.querySelector('[itemprop=priceRange]').innerText.replace(/\s+/g, '');
@@ -125,15 +151,17 @@ function getBarInformation(barUrl) {
     
     // Get list of reviews
     var reviewsList = document.getElementById('tipsList').children;
+    barInformation.reviews = [];
     for (var j = 0; j < reviewsList.length; ++j) {
       var tipContents = reviewsList[j].lastElementChild.children;
-      barInformation.reviews = [];
       var barReview = {};
-      barReview.text = tipContents[0].innerText;
-      barReview.date = tipContents[1].children[1].innerText;
+      barReview.text = tipContents[0].innerText.toString();
+      barReview.date = tipContents[1].children[1].innerText.toString();
       barInformation.reviews.push(barReview);
     }
+    return barInformation;
   });
+  return barInformation;
 }
 
 
