@@ -6,8 +6,10 @@ var searchForUserInformation = false;
 var Papa = require('./babyparse.js');
 var numMaxBars = 50;
 var isReviewOn = false;
-var searchTerm = 'pubs';
-var location = 'Rio de Janeiro, RJ, Brazil';
+var searchTerm = 'Pubs';
+var searchLocation = 'Rio de Janeiro, RJ, Brazil';
+var loginEmail = 'YOUR_EMAIL_ADDRESS';
+var loginPassword = 'YOUR_PASSWORD';
 
 page.onConsoleMessage = function(msg) {
   // Don't print Foursquare's developer console warning
@@ -26,14 +28,11 @@ page.render(screenshotPath + screenshotNum++ + '.png');
 
 if(searchForUserInformation) {
   // Fill out login fields and submit it
-  page.evaluate(function() {
-    var EMAIL_ADDRESS = 'YOUR_EMAIL_ADDRESS';
-    var PASSWORD = 'YOUR_PASSWORD';
-    
-    document.getElementById('username').value = EMAIL_ADDRESS;
-    document.getElementById('password').value = PASSWORD;
+  page.evaluate(function(loginEmail, loginPassword) { 
+    document.getElementById('username').value = loginEmail;
+    document.getElementById('password').value = loginPassword;
     document.getElementById('loginFormButton').click();
-  });
+  }, loginEmail, loginPassword);
   do { phantom.page.sendEvent('mousemove'); } while (page.loading);
   console.log('Logged in!');
   page.render(screenshotPath + screenshotNum++ + '.png');
@@ -70,11 +69,13 @@ if(searchForUserInformation) {
 }
 
 // Fill out search for bars in neighborhood
-page.evaluate(function() {
-  document.getElementById('headerBarSearch').value = 'Pubs';
-  document.getElementById('headerLocationInput').value = 'Rio de Janeiro, RJ, Brazil';
+page.evaluate(function(searchTerm, searchLocation) {
+  console.log('Search Term: ' + searchTerm);
+  console.log('Location: ' + searchLocation);
+  document.getElementById('headerBarSearch').value = searchTerm;
+  document.getElementById('headerLocationInput').value = searchLocation;
   document.querySelector('.submitButton').click();
-});
+}, searchTerm, searchLocation);
 do { phantom.page.sendEvent('mousemove'); } while (page.evaluate(function() { 
   var isVisible = document.getElementById('resultsContainer');
   if(isVisible) return false;
@@ -138,7 +139,7 @@ function getBarInformation(barUrl) {
   page.render(screenshotPath + screenshotNum++ + '.png');
   
   // Save bar information
-  var barInformation = page.evaluate(function() {
+  var barInformation = page.evaluate(function(isReviewOn) {
     function getPropertyInformation(obj, propName, propSelector, propProperty) {
       if (document.querySelector(propSelector)) {
         obj[propName] = document.querySelector(propSelector)[propProperty];
@@ -170,17 +171,19 @@ function getBarInformation(barUrl) {
     
     // TODO: Figure out a better way to save reviews to CSV
     // Get list of reviews
-    // var reviewsList = document.getElementById('tipsList').children;
-    // barInformation.reviews = {};
-    // for (var j = 0; j < reviewsList.length; ++j) {
-    //   var tipContents = reviewsList[j].lastElementChild.children;
-    //   var barReview = {};
-    //   barReview.text = tipContents[0].innerText.toString();
-    //   barReview.date = tipContents[1].children[1].innerText.toString();
-    //   barInformation.reviews['review' + j] = barReview;
-    // }
+    if(isReviewOn) {
+      var reviewsList = document.getElementById('tipsList').children;
+      barInformation.reviews = {};
+      for (var j = 0; j < reviewsList.length; ++j) {
+        var tipContents = reviewsList[j].lastElementChild.children;
+        var barReview = {};
+        barReview.text = tipContents[0].innerText.toString();
+        barReview.date = tipContents[1].children[1].innerText.toString();
+        barInformation.reviews['review' + j] = barReview;
+      }
+    }
     return barInformation;
-  });
+  }, isReviewOn);
   barInformation.foursquare = barUrl;
   return barInformation;
 } 
