@@ -26,17 +26,17 @@ do { phantom.page.sendEvent('mousemove'); } while (page.loading);
 console.log('Foursquare loaded!');
 page.render(screenshotPath + screenshotNum++ + '.png');
 
-if(searchForUserInformation) {
-  // Fill out login fields and submit it
-  page.evaluate(function(loginEmail, loginPassword) { 
-    document.getElementById('username').value = loginEmail;
-    document.getElementById('password').value = loginPassword;
-    document.getElementById('loginFormButton').click();
-  }, loginEmail, loginPassword);
-  do { phantom.page.sendEvent('mousemove'); } while (page.loading);
-  console.log('Logged in!');
-  page.render(screenshotPath + screenshotNum++ + '.png');
+// Fill out login fields and submit it
+page.evaluate(function(loginEmail, loginPassword) { 
+  document.getElementById('username').value = loginEmail;
+  document.getElementById('password').value = loginPassword;
+  document.getElementById('loginFormButton').click();
+}, loginEmail, loginPassword);
+do { phantom.page.sendEvent('mousemove'); } while (page.loading);
+console.log('Logged in!');
+page.render(screenshotPath + screenshotNum++ + '.png');
 
+if(searchForUserInformation) {
   // Head to account information
   page.evaluate(function() {
     var ev = document.createEvent('MouseEvents');
@@ -96,7 +96,7 @@ while(page.evaluate(function() {
       var ev = document.createEvent('MouseEvents');
       ev.initEvent('click', true, true);
       var element = document.querySelector('.blueButton');
-      console.log('clicking on element: ' + element);
+      console.log('clicking on element: ' + element.innerText);
       element.dispatchEvent(ev);
     }
   });
@@ -123,6 +123,7 @@ var barList = page.evaluate(function() {
 
 var barListInformation = [];
 //for (var i = 0; i < barList.length; i++) {
+if(numMaxBars > barList.length) numMaxBars = barList.length;
 for (var i = 0; i < numMaxBars; i++) {
   barListInformation.push(getBarInformation(barList[i]));
 }
