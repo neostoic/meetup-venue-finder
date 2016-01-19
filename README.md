@@ -13,7 +13,7 @@ I'm using PhantomJS v2.0.0 for Mac. You might need to install brew and follow th
 2. Run:
 
 ```sh
-$ phantomjs foursquare.js
+$ phantomjs app.js
 ```
 
 The output will be in the `barOutput` folder.

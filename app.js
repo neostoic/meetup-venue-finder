@@ -4,6 +4,10 @@ var screenshotPath = 'screenshots/foursquare';
 var userInformation = {};
 var searchForUserInformation = false;
 var Papa = require('./babyparse.js');
+var numMaxBars = 50;
+var isReviewOn = false;
+var searchTerm = 'pubs';
+var location = 'Rio de Janeiro, RJ, Brazil';
 
 page.onConsoleMessage = function(msg) {
   // Don't print Foursquare's developer console warning
@@ -67,8 +71,8 @@ if(searchForUserInformation) {
 
 // Fill out search for bars in neighborhood
 page.evaluate(function() {
-  document.getElementById('headerBarSearch').value = 'bar';
-  document.getElementById('headerLocationInput').value = 'Logan Square';
+  document.getElementById('headerBarSearch').value = 'Pubs';
+  document.getElementById('headerLocationInput').value = 'Rio de Janeiro, RJ, Brazil';
   document.querySelector('.submitButton').click();
 });
 do { phantom.page.sendEvent('mousemove'); } while (page.evaluate(function() { 
@@ -117,7 +121,8 @@ var barList = page.evaluate(function() {
 });
 
 var barListInformation = [];
-for (var i = 0; i < barList.length; i++) {
+//for (var i = 0; i < barList.length; i++) {
+for (var i = 0; i < numMaxBars; i++) {
   barListInformation.push(getBarInformation(barList[i]));
 }
 function getBarInformation(barUrl) {
