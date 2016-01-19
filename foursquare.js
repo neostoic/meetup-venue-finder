@@ -134,36 +134,51 @@ function getBarInformation(barUrl) {
   
   // Save bar information
   var barInformation = page.evaluate(function() {
-    var barInformation = {};
-    barInformation.name = document.querySelector('.venueName').innerText;
-    barInformation.address = document.querySelector('.adr').innerText;
-    barInformation.telephone = document.querySelector('.tel').innerText;
-    barInformation.price = document.querySelector('[itemprop=priceRange]').innerText.replace(/\s+/g, '');
-    barInformation.website = document.querySelector('.url').href;
-    
-    // Outdoor seating has no ID's or specific classes
-    var venueSecondaryAttr = document.querySelectorAll('.venueAttr, .secondaryAttr');
-    for (i = 0; i < venueSecondaryAttr.length; ++i) {
-      var attrKey = venueSecondaryAttr[i].firstElementChild.innerText;
-      if(attrKey.match('Outdoor Seating')) {
-        barInformation.outdoorSeating = venueSecondaryAttr[i].lastElementChild.innerText;
+    function getPropertyInformation(obj, propName, propSelector, propProperty) {
+      if (document.querySelector(propSelector)) {
+        obj[propName] = document.querySelector(propSelector)[propProperty];
       }
+      return obj;
     }
     
-    // Get list of reviews
-    var reviewsList = document.getElementById('tipsList').children;
-    barInformation.reviews = {};
-    for (var j = 0; j < reviewsList.length; ++j) {
-      var tipContents = reviewsList[j].lastElementChild.children;
-      var barReview = {};
-      barReview.text = tipContents[0].innerText.toString();
-      barReview.date = tipContents[1].children[1].innerText.toString();
-      barInformation.reviews['review' + j] = barReview;
+    var barInformation = {};
+    barInformation = getPropertyInformation(barInformation, 'name', '.venueName', 'innerText');
+    barInformation = getPropertyInformation(barInformation, 'neighborhood', '.neighborhood', 'innerText');
+    barInformation = getPropertyInformation(barInformation, 'address', '.adr', 'innerText');
+    barInformation = getPropertyInformation(barInformation, 'telephone', '.tel', 'innerText');
+    barInformation = getPropertyInformation(barInformation, 'website', '.url', 'href');
+    barInformation = getPropertyInformation(barInformation, 'twitter', '.twitterPageLink', 'href');
+    barInformation = getPropertyInformation(barInformation, 'facebook', '.facebookPageLink', 'href');
+    barInformation = getPropertyInformation(barInformation, 'rating', '[itemprop=ratingValue]', 'innerText');
+    if (document.querySelector('[itemprop=priceRange]')) {
+      barInformation.price = document.querySelector('[itemprop=priceRange]').innerText.replace(/\s+/g, '');
     }
+    
+    // // Outdoor seating has no ID's or specific classes
+    // var venueSecondaryAttr = document.querySelectorAll('.venueAttr, .secondaryAttr');
+    // for (i = 0; i < venueSecondaryAttr.length; ++i) {
+    //   var attrKey = venueSecondaryAttr[i].firstElementChild.innerText;
+    //   if(attrKey.match('Outdoor Seating')) {
+    //     barInformation.outdoorSeating = venueSecondaryAttr[i].lastElementChild.innerText;
+    //   }
+    // }
+    
+    // TODO: Figure out a better way to save reviews to CSV
+    // Get list of reviews
+    // var reviewsList = document.getElementById('tipsList').children;
+    // barInformation.reviews = {};
+    // for (var j = 0; j < reviewsList.length; ++j) {
+    //   var tipContents = reviewsList[j].lastElementChild.children;
+    //   var barReview = {};
+    //   barReview.text = tipContents[0].innerText.toString();
+    //   barReview.date = tipContents[1].children[1].innerText.toString();
+    //   barInformation.reviews['review' + j] = barReview;
+    // }
     return barInformation;
   });
+  barInformation.foursquare = barUrl;
   return barInformation;
-}
+} 
 
 // Convert bars information to JSON
 var jsonObject = JSON.stringify(barListInformation);
