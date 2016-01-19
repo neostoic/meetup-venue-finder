@@ -17,3 +17,12 @@ Keep in mind the scraping of less than 1.000 venues per [Foursquare's terms](htt
   ```
 
 The output will be in the `barOutput` folder.
+
+## Improvements
+
+* Pass search arguments via command-line
+* Filter by price range
+* Get keywords from reviews
+* Fix CSV saving special characters (ãé)
+* Remove empty lines being printed to console
+* Add timeout between requests (waitfor.js)
